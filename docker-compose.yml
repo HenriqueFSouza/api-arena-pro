@@ -1,0 +1,12 @@
+name: 'agenda-pro'
+
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: agenda-pro-postgres
+    environment:
+      - POSTGRES_USER=agenda
+      - POSTGRES_PASSWORD=agenda
+      - POSTGRES_DB=agenda-pro
+    ports:
+      - '5432:5432'
