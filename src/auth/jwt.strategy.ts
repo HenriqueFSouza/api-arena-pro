@@ -10,7 +10,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          return request?.cookies?.access_token;
+          return request?.cookies?.arena_pro_access_token;
         },
       ]),
       ignoreExpiration: false,
