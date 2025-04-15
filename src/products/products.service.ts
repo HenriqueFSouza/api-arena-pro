@@ -4,7 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(ownerId: string, data: CreateProductDto) {
     // Verify if category exists and belongs to owner
@@ -51,12 +51,18 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(ownerId: string) {
+  async findAll(ownerId: string, categoryId: string, search: string) {
     const products = await this.prisma.product.findMany({
       where: {
         owner: {
           id: ownerId
-        }
+        },
+        ...(categoryId && {
+          categoryId: categoryId
+        }),
+        ...(search && {
+          name: { contains: search, mode: 'insensitive' }
+        })
       },
       include: {
         category: {

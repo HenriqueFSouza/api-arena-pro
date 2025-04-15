@@ -8,20 +8,20 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
 import { Profile } from '@prisma/client';
-import { ProductCategoriesService } from './product-categories.service';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/zod-validation.pipe';
 import {
   CreateProductCategoryDto,
   createProductCategorySchema,
 } from './dto/create-product-category.dto';
+import { ProductCategoriesService } from './product-categories.service';
 
 @Controller('product-categories')
 @UseGuards(JwtAuthGuard)
 export class ProductCategoriesController {
-  constructor(private productCategoriesService: ProductCategoriesService) {}
+  constructor(private productCategoriesService: ProductCategoriesService) { }
 
   @Post()
   async create(

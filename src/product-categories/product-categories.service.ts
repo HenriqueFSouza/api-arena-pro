@@ -4,7 +4,7 @@ import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 
 @Injectable()
 export class ProductCategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(ownerId: string, data: CreateProductCategoryDto) {
     const categoryWithSameName = await this.prisma.productCategory.findFirst({
@@ -41,11 +41,7 @@ export class ProductCategoriesService {
         ownerId,
       },
       include: {
-        _count: {
-          select: {
-            products: true,
-          },
-        },
+        products: true,
       },
     });
 

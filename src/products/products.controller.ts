@@ -6,22 +6,23 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
 import { Profile } from '@prisma/client';
-import { ProductsService } from './products.service';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/zod-validation.pipe';
 import {
   CreateProductDto,
   createProductSchema,
 } from './dto/create-product.dto';
+import { ProductsService } from './products.service';
 
 @Controller('products')
 @UseGuards(JwtAuthGuard)
 export class ProductsController {
-  constructor(private productsService: ProductsService) {}
+  constructor(private productsService: ProductsService) { }
 
   @Post()
   async create(
@@ -33,8 +34,12 @@ export class ProductsController {
   }
 
   @Get()
-  async findAll(@CurrentUser() user: Profile) {
-    return this.productsService.findAll(user.id);
+  async findAll(
+    @CurrentUser() user: Profile,
+    @Query('categoryId') categoryId: string,
+    @Query('search') search: string,
+  ) {
+    return this.productsService.findAll(user.id, categoryId, search);
   }
 
   @Get(':id')
