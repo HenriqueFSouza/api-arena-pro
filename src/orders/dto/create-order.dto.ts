@@ -15,7 +15,7 @@ const clientInfoSchema = z.object({
 export const createOrderSchema = z.object({
   note: z.string().optional(),
   clientInfo: clientInfoSchema.optional(),
-  items: z.array(orderItemSchema).min(1, 'Order must have at least one item'),
+  items: z.array(orderItemSchema).optional(),
 });
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;

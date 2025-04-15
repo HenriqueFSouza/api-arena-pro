@@ -1,16 +1,16 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { Env } from './env';
+import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
+import { Env } from './env';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: ['http://localhost:3000', 'http://localhost:3001'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['content-type']
+    allowedHeaders: ['content-type', 'Authorization', 'Accept']
   });
 
   const configService = app.get<ConfigService<Env>>(ConfigService)
@@ -20,5 +20,6 @@ async function bootstrap() {
   app.use(cookieParser());
 
   await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();

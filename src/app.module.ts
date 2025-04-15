@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
-import { ProfilesModule } from './profiles/profiles.module';
 import { AuthModule } from './auth/auth.module';
+import { envSchema } from './env';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { ProductsModule } from './products/products.module';
-import { envSchema } from './env';
+import { ProfilesModule } from './profiles/profiles.module';
 
 @Module({
   imports: [
@@ -14,8 +16,10 @@ import { envSchema } from './env';
       isGlobal: true,
     }),
     PrismaModule,
-    ProfilesModule,
     AuthModule,
+    OrdersModule,
+    PaymentsModule,
+    ProfilesModule,
     ProductCategoriesModule,
     ProductsModule,
   ],

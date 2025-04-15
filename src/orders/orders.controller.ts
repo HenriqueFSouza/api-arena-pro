@@ -7,25 +7,28 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Profile } from '@prisma/client';
-import { OrdersService } from './orders.service';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/zod-validation.pipe';
+import { z } from 'zod';
 import {
   CreateOrderDto,
   createOrderSchema,
   OrderItemDto,
   orderItemSchema,
 } from './dto/create-order.dto';
-import { z } from 'zod';
+import { OrdersService } from './orders.service';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(private ordersService: OrdersService) { }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new order' })
+  @ApiResponse({ status: 201, description: 'Order created successfully' })
   async create(
     @CurrentUser() user: Profile,
     @Body(new ZodValidationPipe(createOrderSchema))

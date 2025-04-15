@@ -6,69 +6,39 @@ type OrderStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(ownerId: string, data: CreateOrderDto) {
-    // Start transaction since we might need to create a client
-    return this.prisma.$transaction(async (tx) => {
-      let clientId: string | undefined;
 
-      if (data.clientInfo) {
-        // Try to find existing client by phone
-        const existingClient = await tx.client.findUnique({
-          where: { phone: data.clientInfo.phone },
-        });
+    let clientId: string | undefined;
 
-        if (!existingClient && !data.clientInfo.name) {
-          throw new NotFoundException(
-            'Client not found. Please provide client name to create a new client.',
-          );
-        }
+    if (data.clientInfo) {
+      // Try to find existing client by phone
+      const existingClient = await this.prisma.client.findUnique({
+        where: { phone: data.clientInfo.phone },
+      });
 
-        if (!existingClient && data.clientInfo.name) {
-          // Create new client
-          const newClient = await tx.client.create({
-            data: {
-              name: data.clientInfo.name,
-              phone: data.clientInfo.phone,
-              profiles: {
-                create: {
-                  profile: {
-                    connect: { id: ownerId },
-                  },
-                },
-              },
-            },
-          });
-          clientId = newClient.id;
-        } else if (existingClient) {
-          clientId = existingClient.id;
-          
-          // Ensure client is associated with the profile
-          const profileClient = await tx.profileClient.findUnique({
-            where: {
-              profileId_clientId: {
-                profileId: ownerId,
-                clientId: existingClient.id,
-              },
-            },
-          });
-
-          if (!profileClient) {
-            await tx.profileClient.create({
-              data: {
-                profile: {
-                  connect: { id: ownerId },
-                },
-                client: {
-                  connect: { id: existingClient.id },
-                },
-              },
-            });
-          }
-        }
+      if (!existingClient && !data.clientInfo.name) {
+        throw new NotFoundException(
+          'Client not found. Please provide client name to create a new client.',
+        );
       }
 
+      if (!existingClient && data.clientInfo.name) {
+        // Create new client
+        const newClient = await this.prisma.client.create({
+          data: {
+            name: data.clientInfo.name,
+            phone: data.clientInfo.phone,
+          },
+        });
+        clientId = newClient.id;
+      } else if (existingClient) {
+        clientId = existingClient.id;
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
       // Create order
       const order = await tx.order.create({
         data: {
@@ -96,35 +66,40 @@ export class OrdersService {
       });
 
       // Create order items with product prices
-      const orderClientId = order.clients[0]?.id;
-      const products = await Promise.all(
-        data.items.map((item) =>
-          tx.product.findUnique({
-            where: { id: item.productId },
-            select: { price: true },
-          }),
-        ),
-      );
+      if (data.items.length > 0) {
+        const orderClientId = order.clients[0]?.id;
 
-      await tx.orderItem.createMany({
-        data: data.items.map((item, index) => ({
-          orderId: order.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          note: item.note,
-          orderClientId: orderClientId,
-          price: products[index]?.price ?? 0,
-        })),
-      });
+        // Fetch all products in a single query instead of multiple promises
+        const productIds = data.items.map(item => item.productId);
+        const products = await tx.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, price: true },
+        });
 
-      return this.findOne(order.id, ownerId);
+        // Create a map for faster lookups
+        const productPriceMap = new Map(
+          products.map(product => [product.id, product.price])
+        );
+
+        await tx.orderItem.createMany({
+          data: data.items.map((item) => ({
+            orderId: order.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            note: item.note,
+            orderClientId: orderClientId,
+            price: productPriceMap.get(item.productId) ?? 0,
+          })),
+        });
+      }
     });
   }
 
   async findAll(ownerId: string) {
-    return this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where: {
         ownerId,
+        status: 'OPEN',
       },
       include: {
         clients: {
@@ -142,6 +117,31 @@ export class OrdersService {
         createdAt: 'desc',
       },
     });
+
+    const mappedOrders = orders.map((order) => ({
+      ...order,
+      clients: order.clients.map((client) => ({
+        id: client.id,
+        note: client.note,
+        orderId: client.orderId,
+        clientId: client.clientId,
+        name: client.client.name,
+        phone: client.client.phone,
+        createdAt: client.createdAt,
+        updatedAt: client.updatedAt,
+      })),
+      items: order.items.map((item) => ({
+        ...item,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          categoryId: item.product.categoryId,
+        },
+      })),
+    }));
+
+    return mappedOrders;
   }
 
   async findOne(id: string, ownerId: string) {
@@ -175,7 +175,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('aaaa');
     }
 
     return order;
@@ -220,6 +220,7 @@ export class OrdersService {
       },
       include: {
         clients: true,
+        items: true,
       },
     });
 
@@ -228,24 +229,66 @@ export class OrdersService {
     }
 
     const orderClientId = order.clients[0]?.id;
-    const products = await Promise.all(
-      items.map((item) =>
-        this.prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { price: true },
-        }),
-      ),
+
+    const existingItemsMap = new Map(
+      order.items.map(item => [item.productId, item])
     );
 
-    await this.prisma.orderItem.createMany({
-      data: items.map((item, index) => ({
-        orderId: order.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        note: item.note,
-        orderClientId: orderClientId,
-        price: products[index]?.price ?? 0,
-      })),
+    const itemsToCreate: any[] = [];
+    const itemsToUpdate: any[] = [];
+
+    const newProductIds = items
+      .filter(item => !existingItemsMap.has(item.productId))
+      .map(item => item.productId);
+
+    const newProducts = newProductIds.length > 0
+      ? await this.prisma.product.findMany({
+        where: { id: { in: newProductIds } },
+        select: { id: true, price: true },
+      })
+      : [];
+
+    const productPriceMap = new Map(
+      newProducts.map(product => [product.id, product.price])
+    );
+
+    for (const item of items) {
+      const existingItem = existingItemsMap.get(item.productId);
+
+      if (existingItem) {
+        itemsToUpdate.push({
+          id: existingItem.id,
+          quantity: item.quantity,
+          note: item.note || existingItem.note,
+        });
+      } else {
+        itemsToCreate.push({
+          orderId: order.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          note: item.note,
+          orderClientId: orderClientId,
+          price: productPriceMap.get(item.productId) ?? 0,
+        });
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of itemsToUpdate) {
+        await tx.orderItem.update({
+          where: { id: item.id },
+          data: {
+            quantity: item.quantity,
+            note: item.note,
+          },
+        });
+      }
+
+      if (itemsToCreate.length > 0) {
+        await tx.orderItem.createMany({
+          data: itemsToCreate,
+        });
+      }
     });
 
     return this.findOne(id, ownerId);
