@@ -7,22 +7,22 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
 import { Profile } from '@prisma/client';
-import { PaymentsService } from './payments.service';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/zod-validation.pipe';
 import {
   CreatePaymentDto,
   createPaymentSchema,
 } from './dto/create-payment.dto';
+import { PaymentsService } from './payments.service';
 
-@Controller('orders/:orderId/payments')
+@Controller('payments')
 @UseGuards(JwtAuthGuard)
 export class PaymentsController {
-  constructor(private paymentsService: PaymentsService) {}
+  constructor(private paymentsService: PaymentsService) { }
 
-  @Post()
+  @Post(':orderId')
   async create(
     @CurrentUser() user: Profile,
     @Param('orderId') orderId: string,
@@ -32,7 +32,7 @@ export class PaymentsController {
     return this.paymentsService.create(orderId, user.id, data);
   }
 
-  @Get()
+  @Get(':orderId')
   async findByOrder(
     @CurrentUser() user: Profile,
     @Param('orderId') orderId: string,
@@ -42,10 +42,8 @@ export class PaymentsController {
 
   @Delete(':id')
   async cancel(
-    @CurrentUser() user: Profile,
-    @Param('orderId') orderId: string,
     @Param('id') id: string,
   ) {
-    return this.paymentsService.cancel(id, orderId, user.id);
+    return this.paymentsService.delete(id);
   }
 } 
