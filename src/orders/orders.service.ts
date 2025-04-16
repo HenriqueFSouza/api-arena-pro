@@ -175,7 +175,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('aaaa');
+      throw new NotFoundException('Order not found');
     }
 
     return order;
@@ -292,5 +292,19 @@ export class OrdersService {
     });
 
     return this.findOne(id, ownerId);
+  }
+
+  async deleteOrder(id: string, ownerId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id, ownerId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    await this.prisma.order.delete({
+      where: { id },
+    });
   }
 } 

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -65,5 +66,12 @@ export class OrdersController {
     items: OrderItemDto[],
   ) {
     return this.ordersService.addItems(id, user.id, items);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete an order' })
+  @ApiResponse({ status: 200, description: 'Order deleted successfully' })
+  async deleteOrder(@CurrentUser() user: Profile, @Param('id') id: string) {
+    return this.ordersService.deleteOrder(id, user.id);
   }
 } 
