@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import { Profile } from '@prisma/client';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
-import { Profile } from '@prisma/client';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Response } from 'express';
 
 interface AuthenticateBody {
   email: string;
@@ -31,6 +31,12 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: Profile) {
-    return user;
+    return {
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 } 
