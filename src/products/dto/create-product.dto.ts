@@ -5,6 +5,7 @@ export const createProductSchema = z.object({
   description: z.string().optional(),
   price: z.number().min(0, 'Price must be greater than or equal to 0'),
   quantity: z.number().int().min(0, 'Quantity must be greater than or equal to 0').optional(),
+  imageUrl: z.string().url('Image URL must be a valid URL').optional(),
   categoryId: z.string().uuid('Invalid category ID'),
 });
 

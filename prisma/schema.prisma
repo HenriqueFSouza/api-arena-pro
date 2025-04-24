@@ -8,86 +8,87 @@ datasource db {
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  name        String
-  email       String   @unique
-  passwordHash    String  @map("password_hash")
-  phone       String
-  
+  id           String @id @default(uuid())
+  name         String
+  email        String @unique
+  passwordHash String @map("password_hash")
+  phone        String
+
   // Relationships
-  categories  ProductCategory[]
-  products    Product[]
-  clients     ProfileClient[]
-  orders      Order[]
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  categories ProductCategory[]
+  products   Product[]
+  clients    ProfileClient[]
+  orders     Order[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("profile")
 }
 
 model ProductCategory {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
-  
+
   // Relationships
-  owner       Profile   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String    @map("owner_id")
-  products    Product[]
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  owner    Profile   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId  String    @map("owner_id")
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("product_categories")
 }
 
 model Product {
-  id              String          @id @default(uuid())
-  name            String
-  description     String?
-  price           Decimal         @db.Decimal(10, 2)
-  quantity        Int?           @map("quantity")
-  
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  quantity    Int?    @map("quantity")
+  imageUrl    String? @map("image_url")
+
   // Relationships
-  category        ProductCategory @relation(fields: [categoryId], references: [id])
-  categoryId      String          @map("category_id")
-  owner           Profile         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId         String          @map("owner_id")
-  orderItems      OrderItem[]
-  
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
+  category   ProductCategory @relation(fields: [categoryId], references: [id])
+  categoryId String          @map("category_id")
+  owner      Profile         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId    String          @map("owner_id")
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("products")
 }
 
 model Client {
-  id          String          @id @default(uuid())
-  name        String
-  phone       String          @unique
-  
+  id    String @id @default(uuid())
+  name  String
+  phone String @unique
+
   // Relationships
-  profiles    ProfileClient[]
-  orders      OrderClient[]
-  
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  profiles ProfileClient[]
+  orders   OrderClient[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("clients")
 }
 
 model ProfileClient {
-  id          String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Relationships
-  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  profileId   String    @map("profile_id")
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId    String    @map("client_id")
-  
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String  @map("profile_id")
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String  @map("client_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([profileId, clientId])
   @@map("profile_clients")
@@ -112,89 +113,89 @@ enum PaymentStatus {
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  status      OrderStatus @default(OPEN)
-  note        String?
-  
+  id     String      @id @default(uuid())
+  status OrderStatus @default(OPEN)
+  note   String?
+
   // Relationships
-  owner       Profile     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String      @map("owner_id")
-  
+  owner   Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String  @map("owner_id")
+
   // Order can be split between multiple clients
-  clients     OrderClient[]
-  items       OrderItem[]
-  payments    Payment[]
-  
+  clients  OrderClient[]
+  items    OrderItem[]
+  payments Payment[]
+
   // Timestamps
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("orders")
 }
 
 model OrderClient {
-  id          String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Optional note for this client's part of the order
-  note        String?
-  
+  note String?
+
   // Relationships
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId     String    @map("order_id")
-  client      Client    @relation(fields: [clientId], references: [id])
-  clientId    String    @map("client_id")
-  items       OrderItem[]
-  payments    Payment[]
-  
+  order    Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  String      @map("order_id")
+  client   Client      @relation(fields: [clientId], references: [id])
+  clientId String      @map("client_id")
+  items    OrderItem[]
+  payments Payment[]
+
   // Timestamps
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([orderId, clientId])
   @@map("order_clients")
 }
 
 model OrderItem {
-  id          String    @id @default(uuid())
-  quantity    Int
-  price       Decimal   @db.Decimal(10, 2)
-  note        String?
-  
+  id       String  @id @default(uuid())
+  quantity Int
+  price    Decimal @db.Decimal(10, 2)
+  note     String?
+
   // Relationships
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId     String    @map("order_id")
-  product     Product   @relation(fields: [productId], references: [id])
-  productId   String    @map("product_id")
-  
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String  @map("order_id")
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id")
+
   // Optional relationship to specific client in split orders
-  orderClient OrderClient? @relation(fields: [orderClientId], references: [id])
-  orderClientId String?    @map("order_client_id")
-  
+  orderClient   OrderClient? @relation(fields: [orderClientId], references: [id])
+  orderClientId String?      @map("order_client_id")
+
   // Timestamps
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("order_items")
 }
 
 model Payment {
-  id          String        @id @default(uuid())
-  amount      Decimal       @db.Decimal(10, 2)
-  method      PaymentMethod
-  status      PaymentStatus @default(PENDING)
-  note        String?
-  
+  id     String        @id @default(uuid())
+  amount Decimal       @db.Decimal(10, 2)
+  method PaymentMethod
+  status PaymentStatus @default(PENDING)
+  note   String?
+
   // Relationships
-  order       Order         @relation(fields: [orderId], references: [id])
-  orderId     String        @map("order_id")
-  
+  order   Order  @relation(fields: [orderId], references: [id])
+  orderId String @map("order_id")
+
   // Optional relationship to specific client in split orders
-  orderClient OrderClient?  @relation(fields: [orderClientId], references: [id])
-  orderClientId String?     @map("order_client_id")
-  
+  orderClient   OrderClient? @relation(fields: [orderClientId], references: [id])
+  orderClientId String?      @map("order_client_id")
+
   // Timestamps
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("payments")
 }

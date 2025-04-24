@@ -27,6 +27,7 @@ export class ProductsService {
         description: data.description,
         price: data.price,
         quantity: data.quantity,
+        imageUrl: data.imageUrl,
         category: {
           connect: {
             id: data.categoryId
@@ -135,6 +136,7 @@ export class ProductsService {
         description: data.description,
         price: data.price,
         quantity: data.quantity,
+        imageUrl: data.imageUrl,
         ...(data.categoryId && {
           category: {
             connect: {
