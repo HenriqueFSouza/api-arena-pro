@@ -7,7 +7,7 @@ import { Env } from './env';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: ['https://interface-arena-q9z2rresw-henriquefsouzas-projects.vercel.app', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['content-type', 'Authorization', 'Accept']
