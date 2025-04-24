@@ -10,7 +10,6 @@ import { ProductsModule } from './products/products.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { StorageModule } from './storage/storage.module';
 
-const allowedOrigins = ['https://payarena.com.br/', 'https://www.payarena.com.br/', 'http://localhost:3000'];
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,7 +20,7 @@ const allowedOrigins = ['https://payarena.com.br/', 'https://www.payarena.com.br
           cors: {
             origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
               if (!origin) return callback(null, true);
-              if (allowedOrigins.includes(origin)) {
+              if (origin.endsWith('payarena.com.br')) {
                 callback(null, true);
               } else {
                 callback(new Error('Not allowed by CORS'));
