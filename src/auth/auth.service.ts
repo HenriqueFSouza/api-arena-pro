@@ -30,8 +30,8 @@ export class AuthService {
     // Set cookie with the JWT token
     response.cookie('arena_pro_access_token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: true,
+      sameSite: 'lax',
       path: '/',
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
