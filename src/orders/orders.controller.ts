@@ -68,6 +68,15 @@ export class OrdersController {
     return this.ordersService.addItems(id, user.id, items);
   }
 
+  @Delete(':id/items/:itemId')
+  async removeItem(
+    @CurrentUser() user: Profile,
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.ordersService.removeItem(id, user.id, itemId);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an order' })
   @ApiResponse({ status: 200, description: 'Order deleted successfully' })
