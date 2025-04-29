@@ -121,7 +121,7 @@ export class OrdersService {
 
     const mappedOrders = orders.map((order) => {
       const isOrderClient = order.clients.length > 0;
-      const clients = isOrderClient ? order.clients[0].client : order.clientsData[0];
+      const clients = isOrderClient ? { ...order.clients[0].client, orderClientId: order.clients[0].id } : order.clientsData[0];
 
       delete order.clientsData;
       return {
