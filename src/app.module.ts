@@ -20,7 +20,7 @@ import { StorageModule } from './storage/storage.module';
           cors: {
             origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
               if (!origin) return callback(null, true);
-              if (origin.endsWith('payarena.com.br')) {
+              if (origin.endsWith('payarena.com.br') || origin.endsWith('localhost:3000')) {
                 callback(null, true);
               } else {
                 callback(new Error('Not allowed by CORS'));

@@ -12,7 +12,7 @@ export class OrdersService {
 
     let clientId: string | undefined;
 
-    if (data.clientInfo) {
+    if (data.clientInfo && data.clientInfo.phone) {
       // Try to find existing client by phone
       const existingClient = await this.prisma.client.findUnique({
         where: { phone: data.clientInfo.phone },
@@ -43,6 +43,7 @@ export class OrdersService {
       const order = await tx.order.create({
         data: {
           note: data.note,
+          clientsData: [{ name: data.clientInfo?.name }],
           owner: {
             connect: { id: ownerId },
           },
@@ -67,7 +68,7 @@ export class OrdersService {
 
       // Create order items with product prices
       if (data.items.length > 0) {
-        const orderClientId = order.clients[0]?.id;
+        const orderClientId = order.clients[0]?.id || null;
 
         // Fetch all products in a single query instead of multiple promises
         const productIds = data.items.map(item => item.productId);
@@ -118,28 +119,25 @@ export class OrdersService {
       },
     });
 
-    const mappedOrders = orders.map((order) => ({
-      ...order,
-      clients: order.clients.map((client) => ({
-        id: client.id,
-        note: client.note,
-        orderId: client.orderId,
-        clientId: client.clientId,
-        name: client.client.name,
-        phone: client.client.phone,
-        createdAt: client.createdAt,
-        updatedAt: client.updatedAt,
-      })),
-      items: order.items.map((item) => ({
-        ...item,
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          categoryId: item.product.categoryId,
-        },
-      })),
-    }));
+    const mappedOrders = orders.map((order) => {
+      const isOrderClient = order.clients.length > 0;
+      const clients = isOrderClient ? order.clients[0].client : order.clientsData[0];
+
+      delete order.clientsData;
+      return {
+        ...order,
+        clients: [clients],
+        items: order.items.map((item) => ({
+          ...item,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            categoryId: item.product.categoryId,
+          },
+        })),
+      }
+    });
 
     return mappedOrders;
   }

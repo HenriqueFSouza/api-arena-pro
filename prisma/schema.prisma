@@ -121,6 +121,8 @@ model Order {
   owner   Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String  @map("owner_id")
 
+  clientsData Json?
+
   // Order can be split between multiple clients
   clients  OrderClient[]
   items    OrderItem[]

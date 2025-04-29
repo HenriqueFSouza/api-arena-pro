@@ -8,8 +8,8 @@ export const orderItemSchema = z.object({
 });
 
 const clientInfoSchema = z.object({
-  phone: z.string(),
-  name: z.string().optional(),
+  phone: z.string().optional(),
+  name: z.string(),
 });
 
 export const createOrderSchema = z.object({
