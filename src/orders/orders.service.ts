@@ -256,7 +256,7 @@ export class OrdersService {
       if (existingItem) {
         itemsToUpdate.push({
           id: existingItem.id,
-          quantity: item.quantity,
+          quantity: item.quantity + existingItem.quantity,
           note: item.note || existingItem.note,
         });
       } else {
@@ -288,8 +288,6 @@ export class OrdersService {
         });
       }
     });
-
-    return this.findOne(id, ownerId);
   }
 
   async removeItem(id: string, ownerId: string, itemId: string) {
