@@ -67,9 +67,8 @@ export class PaymentsService {
         },
       },
     });
-
     // Check if order is fully paid and update status
-    await this.checkAndUpdateOrderStatus(orderId);
+    // await this.checkAndUpdateOrderStatus(orderId);
 
     return payment;
   }

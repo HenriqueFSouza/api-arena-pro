@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { envSchema } from './env';
+import { DiscountsModule } from './orders/discounts/discounts.module';
 import { OrdersModule } from './orders/orders.module';
-import { PaymentsModule } from './payments/payments.module';
+import { PaymentsModule } from './orders/payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { ProductsModule } from './products/products.module';
@@ -41,6 +42,7 @@ import { StorageModule } from './storage/storage.module';
     ProductCategoriesModule,
     ProductsModule,
     StorageModule,
+    DiscountsModule,
   ],
   controllers: [],
   providers: [],

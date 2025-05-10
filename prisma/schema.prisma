@@ -112,6 +112,20 @@ enum PaymentStatus {
   CANCELLED
 }
 
+model Discount {
+  id     String  @id @default(uuid())
+  value  Decimal @db.Decimal(10, 2)
+  reason String?
+
+  // Relationships
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String @map("order_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("discounts")
+}
+
 model Order {
   id     String      @id @default(uuid())
   status OrderStatus @default(OPEN)
@@ -124,9 +138,10 @@ model Order {
   clientsData Json?
 
   // Order can be split between multiple clients
-  clients  OrderClient[]
-  items    OrderItem[]
-  payments Payment[]
+  clients   OrderClient[]
+  items     OrderItem[]
+  payments  Payment[]
+  discounts Discount[]
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
