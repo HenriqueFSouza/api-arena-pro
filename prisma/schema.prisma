@@ -20,8 +20,10 @@ model Profile {
   clients    ProfileClient[]
   orders     Order[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  CashRegister CashRegister[]
+  Expense      Expense[]
 
   @@map("profile")
 }
@@ -215,4 +217,52 @@ model Payment {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("payments")
+}
+
+model CashRegister {
+  id String @id @default(uuid())
+
+  openedAmount   Float
+  expectedAmount Float
+  closedAmount   Float?
+
+  owner   Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String  @map("owner_id")
+
+  registeredPayments Json // Array of { paymentMethod: 'CASH' | 'CARD' | 'PIX', amount: number }
+  createdAt          DateTime      @default(now()) @map("created_at")
+  closedAt           DateTime?     @map("closed_at")
+  transactions       Transaction[]
+
+  @@map("cash_register")
+}
+
+model Transaction {
+  id String @id @default(uuid())
+
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  cashRegisterId String       @map("cash_register_id")
+
+  originId      String?        @map("origin_id") // Allowed to be null for increment transactions
+  originType    String         @map("origin_type") // 'PAYMENT' | 'EXPENSE' | 'INCREMENT'
+  paymentMethod PaymentMethod? @map("payment_method") // Only used for payment transactions
+
+  amount    Float?
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("transactions")
+}
+
+model Expense {
+  id String @id @default(uuid())
+
+  name    String
+  owner   Profile? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String?  @map("owner_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("expenses")
 }
