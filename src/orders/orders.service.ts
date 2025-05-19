@@ -1,12 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CashRegisterService } from 'src/cash-register/cash-register.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto, OrderItemDto } from './dto/create-order.dto';
 
-type OrderStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
+enum OrderStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+  ARCHIVED = 'ARCHIVED',
+}
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private cashRegisterService: CashRegisterService,
+  ) { }
 
   async create(ownerId: string, data: CreateOrderDto) {
 
@@ -43,7 +51,7 @@ export class OrdersService {
       const order = await tx.order.create({
         data: {
           note: data.note,
-          clientsData: [{ name: data.clientInfo?.name }],
+          ...(!clientId && { clientsData: [{ name: data.clientInfo?.name }] }),
           owner: {
             connect: { id: ownerId },
           },
@@ -179,7 +187,7 @@ export class OrdersService {
     return order;
   }
 
-  async updateStatus(id: string, ownerId: string, status: OrderStatus) {
+  async closeOrder(id: string, ownerId: string) {
     const order = await this.prisma.order.findFirst({
       where: {
         id,
@@ -191,21 +199,13 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-      include: {
-        clients: {
-          include: {
-            client: true,
-          },
-        },
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id },
+        data: { status: OrderStatus.CLOSED }
+      });
+
+      await this.cashRegisterService.createPaymentTransactions(id, ownerId);
     });
   }
 
