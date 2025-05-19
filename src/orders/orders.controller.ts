@@ -48,14 +48,12 @@ export class OrdersController {
     return this.ordersService.findOne(id, user.id);
   }
 
-  @Put(':id/status')
-  async updateStatus(
+  @Put(':id/close')
+  async closeOrder(
     @CurrentUser() user: Profile,
     @Param('id') id: string,
-    @Body('status', new ZodValidationPipe(z.enum(['OPEN', 'CLOSED', 'ARCHIVED'])))
-    status: 'OPEN' | 'CLOSED' | 'ARCHIVED',
   ) {
-    return this.ordersService.updateStatus(id, user.id, status);
+    return this.ordersService.closeOrder(id, user.id);
   }
 
   @Post(':id/items')

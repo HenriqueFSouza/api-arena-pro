@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { CashRegisterModule } from './cash-register/cash-register.module';
 import { envSchema } from './env';
+import { ExpensesModule } from './expenses/expenses.module';
 import { DiscountsModule } from './orders/discounts/discounts.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './orders/payments/payments.module';
@@ -10,7 +12,6 @@ import { ProductCategoriesModule } from './product-categories/product-categories
 import { ProductsModule } from './products/products.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { StorageModule } from './storage/storage.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +44,8 @@ import { StorageModule } from './storage/storage.module';
     ProductsModule,
     StorageModule,
     DiscountsModule,
+    CashRegisterModule,
+    ExpensesModule,
   ],
   controllers: [],
   providers: [],

@@ -18,5 +18,11 @@ export const createOrderSchema = z.object({
   items: z.array(orderItemSchema).optional(),
 });
 
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+  ARCHIVED = 'ARCHIVED',
+}
+
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type OrderItemDto = z.infer<typeof orderItemSchema>; 
