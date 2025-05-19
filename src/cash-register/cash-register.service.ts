@@ -55,7 +55,7 @@ export class CashRegisterService {
         });
 
         if (!cashRegister) {
-            throw new HttpException('No open cash register found', HttpStatus.NOT_FOUND);
+            return null;
         }
 
         return cashRegister;

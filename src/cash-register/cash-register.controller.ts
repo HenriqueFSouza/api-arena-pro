@@ -24,7 +24,6 @@ export class CashRegisterController {
     @Get('current')
     @ApiOperation({ summary: 'Get the current cash register' })
     @ApiResponse({ status: 200, description: 'Current cash register retrieved successfully' })
-    @ApiResponse({ status: 404, description: 'No open cash register found' })
     async getCurrentCashRegister(@CurrentUser() user: Profile) {
         return this.cashRegisterService.getCurrentCashRegister({ ownerId: user.id });
     }
