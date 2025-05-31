@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CashRegisterService } from 'src/cash-register/cash-register.service';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { StockService } from 'src/stock/stock.service';
 import { CreateOrderDto, OrderItemDto } from './dto/create-order.dto';
 
 enum OrderStatus {
@@ -14,6 +15,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private cashRegisterService: CashRegisterService,
+    private stockService: StockService,
   ) { }
 
   async create(ownerId: string, data: CreateOrderDto) {
@@ -193,6 +195,9 @@ export class OrdersService {
         id,
         ownerId,
       },
+      include: {
+        items: true,
+      },
     });
 
     if (!order) {
@@ -205,7 +210,15 @@ export class OrdersService {
         data: { status: OrderStatus.CLOSED }
       });
 
+      // Create cash register transactions
       await this.cashRegisterService.createPaymentTransactions(id, ownerId);
+
+      // Update stock
+      for (const item of order.items) {
+        await this.stockService.updateStockBySale(item.productId, {
+          quantity: item.quantity,
+        }, ownerId);
+      }
     });
   }
 

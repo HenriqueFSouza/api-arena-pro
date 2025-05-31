@@ -11,7 +11,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { ProductsModule } from './products/products.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { StockModule } from './stock/stock.module';
 import { StorageModule } from './storage/storage.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -46,6 +48,7 @@ import { StorageModule } from './storage/storage.module';
     DiscountsModule,
     CashRegisterModule,
     ExpensesModule,
+    StockModule,
   ],
   controllers: [],
   providers: [],
