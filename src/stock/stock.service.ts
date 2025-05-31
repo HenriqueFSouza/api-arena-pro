@@ -67,7 +67,7 @@ export class StockService {
     }
 
     async findOne(id: string, ownerId: string) {
-        const stock = await this.prisma.stock.findFirst({
+        const stock = await this.prisma.stock.findUnique({
             where: { id, ownerId },
             include: {
                 expense: true,
@@ -126,7 +126,7 @@ export class StockService {
     async updateByInventory(dto: UpdateByInventoryDto, ownerId: string) {
 
         for (const item of dto.items) {
-            const stock = await this.findOne(item.itemId, ownerId);
+            const stock = await this.findOne(item.id, ownerId);
 
             if (!stock) {
                 throw new NotFoundException('Stock item not found');
@@ -192,6 +192,5 @@ export class StockService {
             description: `Venda - ${stockProduct.product.name}`,
         });
 
-        return updatedStock;
     }
 } 

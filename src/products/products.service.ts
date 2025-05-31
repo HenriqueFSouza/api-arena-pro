@@ -21,32 +21,46 @@ export class ProductsService {
       throw new NotFoundException('Category not found');
     }
 
-    const product = await this.prisma.product.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        quantity: data.quantity,
-        imageUrl: data.imageUrl,
-        category: {
-          connect: {
-            id: data.categoryId
+    const product = await this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          quantity: data.quantity,
+          imageUrl: data.imageUrl,
+          category: {
+            connect: {
+              id: data.categoryId
+            }
+          },
+          owner: {
+            connect: {
+              id: ownerId
+            }
           }
         },
-        owner: {
-          connect: {
-            id: ownerId
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
           }
         }
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+      });
+
+      if (data.stockProduct && data.stockProduct.length > 0) {
+        await tx.stockProduct.createMany({
+          data: data.stockProduct.map(stockProduct => ({
+            productId: product.id,
+            stockId: stockProduct.stockId,
+            quantity: stockProduct.quantity
+          }))
+        });
       }
+
+      return product;
     });
 
     return product;
@@ -87,7 +101,13 @@ export class ProductsService {
         }
       },
       include: {
-        category: true
+        category: true,
+        stockProduct: {
+          select: {
+            stockId: true,
+            quantity: true
+          }
+        }
       }
     });
 
@@ -95,7 +115,10 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    return product;
+    return {
+      ...product,
+      ...(product.stockProduct.length > 0 ? { stockProduct: product.stockProduct } : { stockProduct: undefined })
+    };
   }
 
   async update(id: string, ownerId: string, data: Partial<CreateProductDto>) {
@@ -129,37 +152,58 @@ export class ProductsService {
       }
     }
 
-    const updatedProduct = await this.prisma.product.update({
-      where: { id },
-      data: {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        quantity: data.quantity,
-        imageUrl: data.imageUrl,
-        ...(data.categoryId && {
+    const updatedProduct = await this.prisma.$transaction(async (tx) => {
+      const updatedProduct = await tx.product.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          quantity: data.quantity,
+          imageUrl: data.imageUrl,
+          ...(data.categoryId && {
+            category: {
+              connect: {
+                id: data.categoryId
+              }
+            }
+          })
+        },
+        include: {
           category: {
-            connect: {
-              id: data.categoryId
+            select: {
+              id: true,
+              name: true
             }
           }
-        })
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
+        }
+      });
+
+      if (data.stockProduct) {
+        const hasItemsToAdd = data.stockProduct.length > 0;
+
+        if (hasItemsToAdd) {
+          await tx.stockProduct.createMany({
+            data: data.stockProduct.map(stockProduct => ({
+              productId: id,
+              stockId: stockProduct.stockId,
+              quantity: stockProduct.quantity
+            }))
+          });
+        } else {
+          await tx.stockProduct.deleteMany({
+            where: { productId: id }
+          });
         }
       }
+      return updatedProduct;
     });
 
     return updatedProduct;
   }
 
   async delete(id: string, ownerId: string) {
-    const product = await this.prisma.product.findFirst({
+    const product = await this.prisma.product.findUnique({
       where: {
         id,
         owner: {
@@ -173,7 +217,7 @@ export class ProductsService {
     }
 
     await this.prisma.product.delete({
-      where: { id }
+      where: { id, ownerId }
     });
   }
 } 

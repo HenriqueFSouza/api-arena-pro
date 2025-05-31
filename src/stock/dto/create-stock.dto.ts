@@ -85,5 +85,5 @@ export class UpdateByInventoryDto {
     @ApiProperty()
     @IsArray()
     @IsNotEmpty()
-    items: { itemId: string, quantity: number }[];
+    items: { id: string, quantity: number }[];
 }

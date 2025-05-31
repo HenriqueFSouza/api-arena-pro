@@ -183,10 +183,10 @@ model OrderItem {
   note     String?
 
   // Relationships
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String  @map("order_id")
-  product   Product @relation(fields: [productId], references: [id])
-  productId String  @map("product_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String   @map("order_id")
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?  @map("product_id")
 
   // Optional relationship to specific client in split orders
   orderClient   OrderClient? @relation(fields: [orderClientId], references: [id])
