@@ -9,13 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Profile } from '@prisma/client';
 import { CurrentUser } from 'src/auth/current-user.decorator';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { ZodValidationPipe } from 'src/pipes/zod-validation.pipe';
 import {
   CreateProductDto,
-  createProductSchema,
 } from './dto/create-product.dto';
 import { ProductsService } from './products.service';
 
@@ -25,9 +24,12 @@ export class ProductsController {
   constructor(private productsService: ProductsService) { }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new product' })
+  @ApiResponse({ status: 201, description: 'Product created successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body' })
   async create(
     @CurrentUser() user: Profile,
-    @Body(new ZodValidationPipe(createProductSchema))
+    @Body()
     data: CreateProductDto,
   ) {
     return this.productsService.create(user.id, data);
@@ -48,10 +50,13 @@ export class ProductsController {
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Update a product' })
+  @ApiResponse({ status: 200, description: 'Product updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body' })
   async update(
     @CurrentUser() user: Profile,
     @Param('id') id: string,
-    @Body(new ZodValidationPipe(createProductSchema))
+    @Body()
     data: CreateProductDto,
   ) {
     return this.productsService.update(id, user.id, data);

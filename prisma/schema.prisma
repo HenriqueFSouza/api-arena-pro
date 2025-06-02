@@ -24,6 +24,7 @@ model Profile {
   updatedAt    DateTime       @updatedAt @map("updated_at")
   CashRegister CashRegister[]
   Expense      Expense[]
+  Stock        Stock[]
 
   @@map("profile")
 }
@@ -59,8 +60,9 @@ model Product {
   ownerId    String          @map("owner_id")
   orderItems OrderItem[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  stockProduct StockProduct[]
 
   @@map("products")
 }
@@ -181,10 +183,10 @@ model OrderItem {
   note     String?
 
   // Relationships
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String  @map("order_id")
-  product   Product @relation(fields: [productId], references: [id])
-  productId String  @map("product_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String   @map("order_id")
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?  @map("product_id")
 
   // Optional relationship to specific client in split orders
   orderClient   OrderClient? @relation(fields: [orderClientId], references: [id])
@@ -254,12 +256,85 @@ model Transaction {
   @@map("transactions")
 }
 
+enum UnitMeasure {
+  UNIT
+  KILOGRAM
+  LITER
+}
+
+enum StockHistoryType {
+  INCOMING
+  OUTGOING
+  ADJUSTMENT
+  INVENTORY
+}
+
+model Stock {
+  id          String      @id @default(uuid())
+  name        String
+  quantity    Float
+  unitMeasure UnitMeasure @map("unit_measure")
+  unitPrice   Decimal     @map("unit_price") @db.Decimal(10, 2)
+  minStock    Float?      @map("min_stock")
+
+  totalAmountSpent       Float? @map("total_amount_spent")
+  totalQuantityPurchased Float? @map("total_quantity_purchased")
+
+  // Relationships
+  expense   Expense @relation(fields: [expenseId], references: [id])
+  expenseId String  @map("expense_id")
+  owner     Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String  @map("owner_id")
+
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  stockProduct StockProduct[]
+  stockHistory StockHistory[]
+
+  @@map("stock")
+}
+
+model StockProduct {
+  id String @id @default(uuid())
+
+  quantity Float
+
+  stock     Stock   @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  stockId   String  @map("stock_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id")
+
+  @@map("stock_products")
+}
+
+model StockHistory {
+  id String @id @default(uuid())
+
+  type        StockHistoryType @map("type")
+  description String?
+
+  initialQuantity Float @default(0)
+  finalQuantity   Float
+
+  totalPrice Float?
+  unitPrice  Float?
+
+  stock   Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  stockId String @map("stock_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("stock_history")
+}
+
 model Expense {
   id String @id @default(uuid())
 
   name    String
   owner   Profile? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String?  @map("owner_id")
+  stocks  Stock[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

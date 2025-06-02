@@ -1,12 +1,40 @@
-import { z } from 'zod';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export const createProductSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  price: z.number().min(0, 'Price must be greater than or equal to 0'),
-  quantity: z.number().int().min(0, 'Quantity must be greater than or equal to 0').optional(),
-  imageUrl: z.string().url('Image URL must be a valid URL').optional(),
-  categoryId: z.string().uuid('Invalid category ID'),
-});
+export class CreateProductDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-export type CreateProductDto = z.infer<typeof createProductSchema>; 
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsOptional()
+  quantity?: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
+
+  @ApiProperty()
+  @IsString()
+  categoryId: string;
+
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  stockProduct?: {
+    stockId: string;
+    quantity: number;
+  }[];
+}
