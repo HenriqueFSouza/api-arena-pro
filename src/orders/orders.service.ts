@@ -269,7 +269,7 @@ export class OrdersService {
       if (existingItem) {
         itemsToUpdate.push({
           id: existingItem.id,
-          quantity: item.quantity + existingItem.quantity,
+          quantity: item.quantity,
           note: item.note || existingItem.note,
         });
       } else {
