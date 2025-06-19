@@ -140,10 +140,10 @@ export class OrdersService {
         items: order.items.map((item) => ({
           ...item,
           product: {
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.price,
-            categoryId: item.product.categoryId,
+            id: item.product?.id || null,
+            name: item.product?.name || null,
+            price: item.product?.price || null,
+            categoryId: item.product?.categoryId || null,
           },
         })),
       }
