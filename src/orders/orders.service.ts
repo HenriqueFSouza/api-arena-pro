@@ -3,6 +3,7 @@ import { CashRegisterService } from 'src/cash-register/cash-register.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { StockService } from 'src/stock/stock.service';
 import { CreateOrderDto, OrderItemDto } from './dto/create-order.dto';
+import { ordersMapper } from './orders.mapers';
 
 enum OrderStatus {
   OPEN = 'OPEN',
@@ -48,9 +49,9 @@ export class OrdersService {
       }
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       // Create order
-      const order = await tx.order.create({
+      const createdOrder = await tx.order.create({
         data: {
           note: data.note,
           ...(!clientId && { clientsData: [{ name: data.clientInfo?.name }] }),
@@ -72,13 +73,13 @@ export class OrdersService {
             include: {
               client: true,
             },
-          },
+          }
         },
       });
 
       // Create order items with product prices
       if (data.items.length > 0) {
-        const orderClientId = order.clients[0]?.id || null;
+        const orderClientId = createdOrder.clients[0]?.id || null;
 
         // Fetch all products in a single query instead of multiple promises
         const productIds = data.items.map(item => item.productId);
@@ -94,7 +95,7 @@ export class OrdersService {
 
         await tx.orderItem.createMany({
           data: data.items.map((item) => ({
-            orderId: order.id,
+            orderId: createdOrder.id,
             productId: item.productId,
             quantity: item.quantity,
             note: item.note,
@@ -103,7 +104,25 @@ export class OrdersService {
           })),
         });
       }
+
+      return tx.order.findUnique({
+        where: { id: createdOrder.id },
+        include: {
+          clients: {
+            include: {
+              client: true,
+            },
+          },
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
     });
+
+    return ordersMapper(order);
   }
 
   async findAll(ownerId: string) {
@@ -129,27 +148,7 @@ export class OrdersService {
       },
     });
 
-    const mappedOrders = orders.map((order) => {
-      const isOrderClient = order.clients.length > 0;
-      const clients = isOrderClient ? { ...order.clients[0].client, orderClientId: order.clients[0].id } : order.clientsData[0];
-
-      delete order.clientsData;
-      return {
-        ...order,
-        clients: [clients],
-        items: order.items.map((item) => ({
-          ...item,
-          product: {
-            id: item.product?.id || null,
-            name: item.product?.name || null,
-            price: item.product?.price || null,
-            categoryId: item.product?.categoryId || null,
-          },
-        })),
-      }
-    });
-
-    return mappedOrders;
+    return ordersMapper(orders);
   }
 
   async findOne(id: string, ownerId: string) {
