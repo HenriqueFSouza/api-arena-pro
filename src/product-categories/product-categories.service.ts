@@ -41,7 +41,11 @@ export class ProductCategoriesService {
         ownerId,
       },
       include: {
-        products: true,
+        products: {
+          where: {
+            deletedAt: null
+          }
+        },
       },
     });
 
@@ -55,7 +59,11 @@ export class ProductCategoriesService {
         ownerId,
       },
       include: {
-        products: true,
+        products: {
+          where: {
+            deletedAt: null
+          }
+        },
       },
     });
 

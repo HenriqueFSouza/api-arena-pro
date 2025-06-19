@@ -77,7 +77,8 @@ export class ProductsService {
         }),
         ...(search && {
           name: { contains: search, mode: 'insensitive' }
-        })
+        }),
+        deletedAt: null
       },
       include: {
         category: {
@@ -208,7 +209,8 @@ export class ProductsService {
         id,
         owner: {
           id: ownerId
-        }
+        },
+        deletedAt: null
       }
     });
 
@@ -216,8 +218,11 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    await this.prisma.product.delete({
-      where: { id, ownerId }
+    await this.prisma.product.update({
+      where: { id, ownerId },
+      data: {
+        deletedAt: new Date()
+      }
     });
   }
 } 
