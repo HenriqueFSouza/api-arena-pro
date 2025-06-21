@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import { ProfilesService } from 'src/profiles/profiles.service';
 
 interface AuthenticateRequest {
@@ -16,6 +16,17 @@ export class AuthService {
     private jwtService: JwtService,
   ) { }
 
+  private getCookieOptions(): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.payarena.com.br' : 'localhost',
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    };
+  }
+
   async authenticate({ email, password }: AuthenticateRequest, response: Response) {
     const profile = await this.profilesService.findByEmail(email);
 
@@ -28,14 +39,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign({ sub: profile.id });
 
     // Set cookie with the JWT token
-    response.cookie('arena_pro_access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      domain: process.env.NODE_ENV === 'production' ? '.payarena.com.br' : 'localhost',
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
+    response.cookie('arena_pro_access_token', accessToken, this.getCookieOptions());
 
     return {
       message: 'Successfully logged in',
@@ -43,7 +47,8 @@ export class AuthService {
   }
 
   logout(response: Response) {
-    response.clearCookie('arena_pro_access_token');
+    response.clearCookie('arena_pro_access_token', this.getCookieOptions());
+
     return {
       message: 'Successfully logged out',
     };
