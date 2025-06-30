@@ -14,7 +14,11 @@ export class PaymentsService {
         ownerId,
       },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
         payments: true,
       },
     });
@@ -29,7 +33,7 @@ export class PaymentsService {
 
     // Calculate total order amount
     const orderTotal = order.items.reduce(
-      (sum, item) => sum + item.price.toNumber() * item.quantity,
+      (sum, item) => sum + item.product.price.toNumber() * item.quantity,
       0,
     );
 
