@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Profile } from '@prisma/client';
 import { CurrentUser } from 'src/auth/current-user.decorator';
@@ -7,6 +7,7 @@ import { CashRegisterService, Sale } from './cash-register.service';
 import { CloseCashRegisterDto } from './dto/close-cash-register.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { OpenCashRegisterDto } from './dto/open-cash-register.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
 @Controller('cash-register')
 @UseGuards(JwtAuthGuard)
@@ -34,6 +35,14 @@ export class CashRegisterController {
     @ApiResponse({ status: 400, description: 'Invalid request body' })
     async createTransaction(@CurrentUser() user: Profile, @Body() dto: CreateTransactionDto) {
         return this.cashRegisterService.createTransaction(dto, user.id);
+    }
+
+    @Put('transaction/:transactionId/payments')
+    @ApiOperation({ summary: 'Update a transaction for the current cash register' })
+    @ApiResponse({ status: 200, description: 'Transaction updated successfully' })
+    @ApiResponse({ status: 400, description: 'Invalid request body' })
+    async updateTransaction(@Body() dto: UpdateTransactionDto, @Param('transactionId') transactionId: string) {
+        return this.cashRegisterService.updatePaymentTransaction(transactionId, dto.payments);
     }
 
     @Get('sales/:id')
