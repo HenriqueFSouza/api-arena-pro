@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CloseCashRegisterDto } from './dto/close-cash-register.dto';
 import { CreateTransactionDto, TransactionOriginType } from './dto/create-transaction.dto';
 import { OpenCashRegisterDto } from './dto/open-cash-register.dto';
+import { UpdateTransactionPayments } from './dto/update-transaction.dto';
 
 interface ClientData {
     name: string;
@@ -12,11 +13,13 @@ interface ClientData {
 }
 
 interface PaymentInfo {
+    id: string;
     amount: Decimal | string | number;
     paymentMethod: string;
 }
 
 export interface Sale {
+    id: string;
     orderId: string;
     clientName: string | null;
     payments: PaymentInfo[];
@@ -88,6 +91,26 @@ export class CashRegisterService {
                 paymentMethod: payment.method,
             }, ownerId);
         }
+    }
+
+    async updatePaymentTransaction(transactionId: string, payments: UpdateTransactionPayments[]) {
+
+        for (const payment of payments) {
+            await this.prisma.$transaction(async (tx) => {
+                await tx.payment.update({
+                    where: { id: payment.paymentId },
+                    data: { method: payment.paymentMethod },
+                });
+
+                await tx.transaction.update({
+                    where: { id: transactionId, originId: payment.paymentId },
+                    data: { paymentMethod: payment.paymentMethod },
+                });
+
+            });
+        }
+
+        return payments;
     }
 
     async registerPayments(dto: CloseCashRegisterDto, cashRegisterId: string) {
@@ -170,6 +193,7 @@ export class CashRegisterService {
         const cashRegisterTransactions = await this.prisma.transaction.findMany({
             where: { cashRegisterId },
             select: {
+                id: true,
                 originType: true,
                 originId: true,
             },
@@ -207,7 +231,7 @@ export class CashRegisterService {
 
         // Group payments by orderId
         const salesMap = payments.reduce((acc, payment) => {
-            const { order, orderId, amount, method, createdAt } = payment;
+            const { order, orderId, amount, method, createdAt, id } = payment;
             const clientsData = order.clientsData as ClientData[] | null;
             const clientName = Array.isArray(clientsData) && clientsData.length
                 ? clientsData[0].name
@@ -215,6 +239,7 @@ export class CashRegisterService {
 
             if (!acc[orderId]) {
                 acc[orderId] = {
+                    id: sales.find((s) => s.originId === id)?.id,
                     orderId,
                     clientName,
                     payments: [],
@@ -223,6 +248,7 @@ export class CashRegisterService {
             }
 
             acc[orderId].payments.push({
+                id,
                 amount,
                 paymentMethod: method,
             });
