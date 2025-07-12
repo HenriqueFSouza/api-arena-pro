@@ -161,21 +161,11 @@ export class OrdersService {
         clients: {
           include: {
             client: true,
-            items: {
-              include: {
-                product: true,
-              },
-            },
           },
         },
         items: {
           include: {
             product: true,
-            orderClient: {
-              include: {
-                client: true,
-              },
-            },
           },
         },
       },
@@ -300,6 +290,8 @@ export class OrdersService {
         });
       }
     });
+
+    return ordersMapper(await this.findOne(id, ownerId));
   }
 
   async removeItem(id: string, ownerId: string, itemId: string) {
