@@ -11,6 +11,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
 import { ProductsModule } from './products/products.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { ReportsModule } from './reports/reports.module';
 import { StockModule } from './stock/stock.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -48,6 +49,7 @@ import { StorageModule } from './storage/storage.module';
     DiscountsModule,
     CashRegisterModule,
     ExpensesModule,
+    ReportsModule,
     StockModule,
   ],
   controllers: [],
