@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentMethod } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import e from 'express';
 
 export interface SalesReportData {
     monthlyStats: Array<{
@@ -31,7 +32,7 @@ export interface SalesReportData {
     averageOrderValue: number;
 }
 
-export type ReportPeriod = 'current' | 'month' | '3months' | '6months' | 'year';
+export type ReportPeriod = 'current' | 'month' | '3months' | '6months' | 'year' | 'today';
 
 @Injectable()
 export class ReportsService {
@@ -39,7 +40,6 @@ export class ReportsService {
 
     async getSalesReport(ownerId: string, period: ReportPeriod, startDate?: string, endDate?: string): Promise<SalesReportData> {
         const dateRange = this.getDateRange(period, startDate, endDate);
-        console.log('VALUES', { dateRange });
 
         // Get all payments in the date range
         const payments = await this.prisma.payment.findMany({
@@ -108,6 +108,11 @@ export class ReportsService {
             start = new Date(startDate);
         } else {
             switch (period) {
+                case 'today':
+                    start = new Date();
+                    start.setHours(0, 0, 0, 0);
+                    end = start;
+                    break;
                 case 'current':
                     start = new Date();
                     start.setDate(1); // Set to first day of current month
@@ -135,6 +140,7 @@ export class ReportsService {
         }
         start = new Date(start.toISOString().split('T')[0] + 'T00:00:00.000Z');
         end = new Date(end.toISOString().split('T')[0] + 'T23:59:59.999Z');
+        console.log("DATAAA", { end, start });
         return { start, end };
     }
 
