@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { BillsModule } from './bills/bills.module';
 import { CashRegisterModule } from './cash-register/cash-register.module';
 import { envSchema } from './env';
 import { ExpensesModule } from './expenses/expenses.module';
@@ -51,6 +52,7 @@ import { StorageModule } from './storage/storage.module';
     ExpensesModule,
     ReportsModule,
     StockModule,
+    BillsModule,
   ],
   controllers: [],
   providers: [],

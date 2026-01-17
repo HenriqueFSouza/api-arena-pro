@@ -25,6 +25,7 @@ model Profile {
   CashRegister CashRegister[]
   Expense      Expense[]
   Stock        Stock[]
+  Bill         Bill[]
 
   @@map("profile")
 }
@@ -115,6 +116,18 @@ enum PaymentStatus {
   PENDING
   COMPLETED
   CANCELLED
+}
+
+enum BillStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum BillRecurrence {
+  NONE
+  WEEKLY
+  MONTHLY
 }
 
 model Discount {
@@ -336,9 +349,37 @@ model Expense {
   owner   Profile? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String?  @map("owner_id")
   stocks  Stock[]
+  bills   Bill[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("expenses")
+}
+
+model Bill {
+  id     String  @id @default(uuid())
+  name   String
+  amount Decimal @db.Decimal(10, 2)
+  notes  String?
+
+  dueDate DateTime  @map("due_date")
+  paidAt  DateTime? @map("paid_at")
+  status  BillStatus @default(PENDING)
+
+  recurrence         BillRecurrence @default(NONE)
+  recurrenceParentId String?        @map("recurrence_parent_id")
+  recurrenceParent   Bill?          @relation("BillRecurrence", fields: [recurrenceParentId], references: [id])
+  recurrenceChildren Bill[]         @relation("BillRecurrence")
+
+  expense   Expense? @relation(fields: [expenseId], references: [id])
+  expenseId String?  @map("expense_id")
+
+  owner   Profile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String  @map("owner_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("bills")
 }
