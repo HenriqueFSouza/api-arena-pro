@@ -1,12 +1,12 @@
-name: 'agenda-pro'
+name: 'payarena'
 
 services:
   postgres:
     image: postgres:alpine
-    container_name: agenda-pro-postgres
+    container_name: payarena-postgres
     environment:
-      - POSTGRES_USER=agenda
-      - POSTGRES_PASSWORD=agenda
-      - POSTGRES_DB=agenda-pro
+      - POSTGRES_USER=payarena
+      - POSTGRES_PASSWORD=payarena
+      - POSTGRES_DB=payarena
     ports:
       - '5432:5432'
