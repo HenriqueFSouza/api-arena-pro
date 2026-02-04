@@ -8,7 +8,12 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
   const corsConfig = configService.get('cors')
-  app.enableCors(corsConfig);
+  app.enableCors({ 
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 
   app.getHttpAdapter().get('/health', (req: Request, res: Response) => {
     res.send('OK');

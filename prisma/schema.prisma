@@ -8,11 +8,12 @@ datasource db {
 }
 
 model Profile {
-  id           String @id @default(uuid())
+  id           String  @id @default(uuid())
   name         String
-  email        String @unique
-  passwordHash String @map("password_hash")
+  email        String  @unique
+  passwordHash String  @map("password_hash")
   phone        String
+  profileImage String? @map("profile_image")
 
   // Relationships
   categories ProductCategory[]
