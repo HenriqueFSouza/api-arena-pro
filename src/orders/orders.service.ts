@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CashRegisterService } from 'src/cash-register/cash-register.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { StockService } from 'src/stock/stock.service';
-import { CreateOrderDto, OrderItemDto } from './dto/create-order.dto';
-import { ordersMapper } from './orders.mapers';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { CashRegisterService } from "src/cash-register/cash-register.service";
+import { PrismaService } from "src/prisma/prisma.service";
+import { StockService } from "src/stock/stock.service";
+import { CreateOrderDto, OrderItemDto } from "./dto/create-order.dto";
+import { ordersMapper } from "./orders.mapers";
 
 enum OrderStatus {
-  OPEN = 'OPEN',
-  CLOSED = 'CLOSED',
-  ARCHIVED = 'ARCHIVED',
+  OPEN = "OPEN",
+  CLOSED = "CLOSED",
+  ARCHIVED = "ARCHIVED",
 }
 
 @Injectable()
@@ -16,11 +16,10 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private cashRegisterService: CashRegisterService,
-    private stockService: StockService,
-  ) { }
+    private stockService: StockService
+  ) {}
 
   async create(ownerId: string, data: CreateOrderDto) {
-
     let clientId: string | undefined;
 
     if (data.clientInfo && data.clientInfo.phone) {
@@ -31,7 +30,7 @@ export class OrdersService {
 
       if (!existingClient && !data.clientInfo.name) {
         throw new NotFoundException(
-          'Client not found. Please provide client name to create a new client.',
+          "Client not found. Please provide client name to create a new client."
         );
       }
 
@@ -73,7 +72,7 @@ export class OrdersService {
             include: {
               client: true,
             },
-          }
+          },
         },
       });
 
@@ -82,7 +81,7 @@ export class OrdersService {
         const orderClientId = createdOrder.clients[0]?.id || null;
 
         // Fetch all products in a single query instead of multiple promises
-        const productIds = data.items.map(item => item.productId);
+        const productIds = data.items.map((item) => item.productId);
         const products = await tx.product.findMany({
           where: { id: { in: productIds } },
           select: { id: true, price: true },
@@ -90,7 +89,7 @@ export class OrdersService {
 
         // Create a map for faster lookups
         const productPriceMap = new Map(
-          products.map(product => [product.id, product.price])
+          products.map((product) => [product.id, product.price])
         );
 
         await tx.orderItem.createMany({
@@ -129,7 +128,7 @@ export class OrdersService {
     const orders = await this.prisma.order.findMany({
       where: {
         ownerId,
-        status: 'OPEN',
+        status: "OPEN",
       },
       include: {
         clients: {
@@ -144,7 +143,7 @@ export class OrdersService {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
@@ -172,7 +171,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     return order;
@@ -190,13 +189,13 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({
         where: { id },
-        data: { status: OrderStatus.CLOSED }
+        data: { status: OrderStatus.CLOSED },
       });
 
       // Create cash register transactions
@@ -204,54 +203,53 @@ export class OrdersService {
 
       // Update stock
       for (const item of order.items) {
-        await this.stockService.updateStockBySale(item.productId, {
-          quantity: item.quantity,
-        }, ownerId);
+        await this.stockService.updateStockBySale(
+          item.productId,
+          {
+            quantity: item.quantity,
+          },
+          ownerId
+        );
       }
     });
   }
 
   async addItems(id: string, ownerId: string, items: OrderItemDto[]) {
+    // Validate order exists and is open - optimized query with select
     const order = await this.prisma.order.findFirst({
       where: {
         id,
         ownerId,
-        status: 'OPEN',
+        status: "OPEN",
       },
-      include: {
-        clients: true,
-        items: true,
+      select: {
+        id: true,
+        items: {
+          select: {
+            id: true,
+            productId: true,
+            note: true,
+          },
+        },
       },
     });
 
     if (!order) {
-      throw new NotFoundException('Open order not found');
+      throw new NotFoundException("Open order not found");
     }
 
-    const orderClientId = order.clients[0]?.id;
+    const orderClientId = items.find(
+      (item) => item.orderClientId
+    )?.orderClientId;
 
     const existingItemsMap = new Map(
-      order.items.map(item => [item.productId, item])
+      order.items.map((item) => [item.productId, item])
     );
 
     const itemsToCreate: any[] = [];
     const itemsToUpdate: any[] = [];
 
-    const newProductIds = items
-      .filter(item => !existingItemsMap.has(item.productId))
-      .map(item => item.productId);
-
-    const newProducts = newProductIds.length > 0
-      ? await this.prisma.product.findMany({
-        where: { id: { in: newProductIds } },
-        select: { id: true, price: true },
-      })
-      : [];
-
-    const productPriceMap = new Map(
-      newProducts.map(product => [product.id, product.price])
-    );
-
+    // Separate items into create/update operations
     for (const item of items) {
       const existingItem = existingItemsMap.get(item.productId);
 
@@ -263,35 +261,99 @@ export class OrdersService {
         });
       } else {
         itemsToCreate.push({
-          orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
           note: item.note,
-          orderClientId: orderClientId,
-          price: productPriceMap.get(item.productId) ?? 0,
+          orderClientId,
         });
       }
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      for (const item of itemsToUpdate) {
-        await tx.orderItem.update({
+    // Fetch prices only for new products (if any)
+    const productPriceMap =
+      itemsToCreate.length > 0
+        ? new Map(
+            (
+              await this.prisma.product.findMany({
+                where: { id: { in: itemsToCreate.map((i) => i.productId) } },
+                select: { id: true, price: true },
+              })
+            ).map((product) => [product.id, product.price])
+          )
+        : new Map();
+
+    // Execute all operations in parallel within transaction for better performance
+    await this.prisma.$transaction([
+      // Parallel updates - each update runs independently
+      ...itemsToUpdate.map((item) =>
+        this.prisma.orderItem.update({
           where: { id: item.id },
           data: {
             quantity: item.quantity,
             note: item.note,
           },
-        });
-      }
+        })
+      ),
+      // Batch create new items
+      ...(itemsToCreate.length > 0
+        ? [
+            this.prisma.orderItem.createMany({
+              data: itemsToCreate.map((item) => ({
+                orderId: order.id,
+                productId: item.productId,
+                quantity: item.quantity,
+                note: item.note,
+                orderClientId: item.orderClientId,
+                price: productPriceMap.get(item.productId) ?? 0,
+              })),
+            }),
+          ]
+        : []),
+    ]);
 
-      if (itemsToCreate.length > 0) {
-        await tx.orderItem.createMany({
-          data: itemsToCreate,
-        });
-      }
+    // Return only newly created items for frontend cache merge
+    // Updated items are already correct via optimistic update, so no need to return them
+    if (itemsToCreate.length === 0) {
+      return { newItems: [] };
+    }
+
+    // Fetch only the newly created items with full product data
+    const newItems = await this.prisma.orderItem.findMany({
+      where: {
+        orderId: order.id,
+        productId: {
+          in: itemsToCreate.map((i) => i.productId),
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            categoryId: true,
+          },
+        },
+      },
     });
 
-    return ordersMapper(await this.findOne(id, ownerId));
+    // Map to match frontend format
+    return {
+      newItems: newItems.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        note: item.note,
+        orderClientId: item.orderClientId,
+        price: item.price,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          categoryId: item.product.categoryId,
+        },
+      })),
+    };
   }
 
   async removeItem(id: string, ownerId: string, itemId: string) {
@@ -300,7 +362,7 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     await this.prisma.orderItem.delete({
@@ -314,11 +376,11 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException("Order not found");
     }
 
     await this.prisma.order.delete({
       where: { id },
     });
   }
-} 
+}
